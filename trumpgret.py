@@ -12,7 +12,7 @@ auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
 api = tweepy.API(auth) 
 
-def getAllTweets(screenName):
+def getAllRetweets(screenName):
     allTweets = []
     
     newTweets = api.user_timeline(screen_name = screenName,count=200)
@@ -30,7 +30,12 @@ def getAllTweets(screenName):
     #transform the tweepy tweets into a 2D array that will populate the database
     dataTweets = []
     for tweet in allTweets:
-        dataTweets.append(getOriginalTime(tweet))
+        try:
+            if(tweet.retweeted_status):
+                dataTweets.append(getOriginalTime(tweet))
+        except AttributeError:
+            pass
+    print("Found: %s retweets" % len(dataTweets))
     insertTweetData(dataTweets)
 
 def getOriginalTime(tweet):
@@ -45,7 +50,6 @@ def insertTweetData(dataTweets):
     c = conn.cursor()
 
     for tweet in dataTweets:
-        print("Inserted")
         c.execute("INSERT OR IGNORE INTO tweets VALUES (?,?)", tweet)
 	
     conn.commit()
@@ -64,6 +68,6 @@ def readDB():
     #conn.commit()
     conn.close()
 	
-	
-#getAllTweets("Trump_Regrets")
+#getAllRetweets("placeholderYael")
+getAllRetweets("Trump_Regrets")
 readDB()
