@@ -1,5 +1,9 @@
 import tweepy
 import sqlite3
+import os
+import requests
+import json
+from bs4 import BeautifulSoup
 
 #Twitter account keys
 consumer_key = "arijIsWxBAZVpHIl1pWaCHRuW"
@@ -56,18 +60,47 @@ def insertTweetData(dataTweets):
     conn.close()
     
 def readDB():
-    #current 2430
     conn = sqlite3.connect('trumpgret.db')
     c = conn.cursor()
 
-    #c.execute("INSERT OR IGNORE INTO tweets VALUES (?,?)", tweet)
     c.execute('SELECT * FROM tweets')
     results = c.fetchall()
     print (len(results))
 	
-    #conn.commit()
     conn.close()
+    
+def getMostRecentTweet():
+    conn = sqlite3.connect('trumpgret.db')
+    c = conn.cursor()
+
+    #c.execute("INSERT OR IGNORE INTO tweets VALUES (?,?)", tweet)
+    c.execute('SELECT * FROM tweets ORDER BY id DESC LIMIT 1')
+    result = c.fetchone()
+    print (result[0])
 	
+    conn.close()
+
+def initDB():
+    if not ([s for s in os.listdir(os.getcwd()) if ".db" in s]):
+        con = sqlite3.connect('trumpgret.db')
+        cursor = con.cursor()
+        
+        # Create table
+        cursor.execute('''CREATE TABLE IF NOT EXISTS tweets
+                     (id integer primary key, date text)''')
+        con.close()
+        
+def readTotalTweetValue():
+    page = requests.get("https://twitter.com/Trump_Regrets")
+    soup = BeautifulSoup(page.content, 'html.parser')
+    return soup.find_all(class_='ProfileNav-value')[0].text
+
+
 #getAllRetweets("placeholderYael")
-getAllRetweets("Trump_Regrets")
-readDB()
+#getAllRetweets("Trump_Regrets")
+#readDB()
+#2,604 tweets as of saturday
+
+initDB()
+readTotalTweetValue()
+
