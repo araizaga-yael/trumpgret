@@ -1,4 +1,8 @@
 {
-  "total_tweets": 2604,
-  "Last_update": "2017-11-19"
+    "last_update": "2017-11-21", 
+    "total_tweets": 2607,
+    "consumer_key": "arijIsWxBAZVpHIl1pWaCHRuW",
+    "consumer_secret": "mAQeIQD6H07LXY0S4Rfoi4Wo3BCTbSWRg4a7mWBrMFWJ9iPHZe",
+    "access_token": "931246988695351300-qd0An9bZLY5fITsyFAhoqeltWRFSTNo",
+    "access_token_secret": "fZvf26nvvlJySOgEINeB5CwiEHBDHr7H4bSPUHpseSDOO"
 }

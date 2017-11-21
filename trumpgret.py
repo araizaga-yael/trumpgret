@@ -3,17 +3,22 @@ import sqlite3
 import os
 import requests
 import json
+import time
 from bs4 import BeautifulSoup
 
+jsonFile = open("twitter_data.json", "r")
+data = json.load(jsonFile)
+jsonFile.close()
+
 #Twitter account keys
-consumer_key = "arijIsWxBAZVpHIl1pWaCHRuW"
-consumer_secret = "mAQeIQD6H07LXY0S4Rfoi4Wo3BCTbSWRg4a7mWBrMFWJ9iPHZe"
-access_token = "931246988695351300-qd0An9bZLY5fITsyFAhoqeltWRFSTNo"
-access_token_secret = "fZvf26nvvlJySOgEINeB5CwiEHBDHr7H4bSPUHpseSDOO"
+consumerKey = data["consumer_key"]
+consumerSecret = data["consumer_secret"]
+accessToken = data["access_token"]
+accessTokenSecret = data["access_token_secret"]
 
 #setting up tweepy api
-auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-auth.set_access_token(access_token, access_token_secret)
+auth = tweepy.OAuthHandler(consumerKey, consumerSecret)
+auth.set_access_token(accessToken, accessTokenSecret)
 api = tweepy.API(auth) 
 
 def getAllRetweets(screenName):
@@ -42,6 +47,22 @@ def getAllRetweets(screenName):
     print("Found: %s retweets" % len(dataTweets))
     insertTweetData(dataTweets)
 
+def getMostRecentRetweets(screenName, count):
+    allTweets = []
+    
+    newTweets = api.user_timeline(screen_name = screenName,count=count)
+    allTweets.extend(newTweets)
+    
+    dataTweets = []
+    for tweet in allTweets:
+        try:
+            if(tweet.retweeted_status):
+                dataTweets.append(getOriginalTime(tweet))
+        except AttributeError:
+            pass
+    print("Found: %s retweets" % len(dataTweets))
+    insertTweetData(dataTweets)
+
 def getOriginalTime(tweet):
     if(tweet.retweeted):
         originaltTweet = api.get_status(tweet.id_str)
@@ -58,8 +79,8 @@ def insertTweetData(dataTweets):
 	
     conn.commit()
     conn.close()
-    
-def readDB():
+
+def getDBTweets():
     conn = sqlite3.connect('trumpgret.db')
     c = conn.cursor()
 
@@ -68,8 +89,9 @@ def readDB():
     print (len(results))
 	
     conn.close()
+    return results
     
-def getMostRecentTweet():
+def getMostRecentTweetDB():
     conn = sqlite3.connect('trumpgret.db')
     c = conn.cursor()
 
@@ -93,14 +115,30 @@ def initDB():
 def readTotalTweetValue():
     page = requests.get("https://twitter.com/Trump_Regrets")
     soup = BeautifulSoup(page.content, 'html.parser')
-    return soup.find_all(class_='ProfileNav-value')[0].text
+    return soup.find_all(class_='ProfileNav-value')[0].text.replace(',', '')
 
+def updateTweetDB():
+    jsonFile = open("twitter_data.json", "r")
+    data = json.load(jsonFile)
+    jsonFile.close()
+    newTweetsNumber = int(readTotalTweetValue()) - int(data["total_tweets"])
+    if(newTweetsNumber > 0):
+        getMostRecentRetweets("Trump_Regrets", newTweetsNumber)
+        #Changing total_tweets and last_update in json
+        data["total_tweets"] = int(readTotalTweetValue())
+        data["last_update"] = time.strftime("%Y-%m-%d")
+    
+        jsonFile = open("twitter_data.json", "w+")
+        jsonFile.write(json.dumps(data))
+        jsonFile.close()
+        return "Saved %s tweets to database" % newTweetsNumber
+    else:
+        return "No new tweets"
 
 #getAllRetweets("placeholderYael")
 #getAllRetweets("Trump_Regrets")
-#readDB()
 #2,604 tweets as of saturday
 
-initDB()
-readTotalTweetValue()
-
+#initDB()
+#readTotalTweetValue()
+#updateTweetDB()
