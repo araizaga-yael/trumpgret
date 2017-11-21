@@ -95,7 +95,6 @@ def getMostRecentTweetDB():
     conn = sqlite3.connect('trumpgret.db')
     c = conn.cursor()
 
-    #c.execute("INSERT OR IGNORE INTO tweets VALUES (?,?)", tweet)
     c.execute('SELECT * FROM tweets ORDER BY id DESC LIMIT 1')
     result = c.fetchone()
     print (result[0])
@@ -137,8 +136,7 @@ def updateTweetDB():
 
 #getAllRetweets("placeholderYael")
 #getAllRetweets("Trump_Regrets")
-#2,604 tweets as of saturday
 
-#initDB()
+initDB()
 #readTotalTweetValue()
 #updateTweetDB()
