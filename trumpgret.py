@@ -21,6 +21,8 @@ auth = tweepy.OAuthHandler(consumerKey, consumerSecret)
 auth.set_access_token(accessToken, accessTokenSecret)
 api = tweepy.API(auth) 
 
+#functions that gets all retweets from account "screenName" and adds
+#them to DB
 def getAllRetweets(screenName):
     allTweets = []
     
@@ -47,6 +49,7 @@ def getAllRetweets(screenName):
     print("Found: %s retweets" % len(dataTweets))
     insertTweetData(dataTweets)
 
+#gets the last "count" number of retweets from "screenName" and add them to DB
 def getMostRecentRetweets(screenName, count):
     allTweets = []
     
@@ -63,6 +66,8 @@ def getMostRecentRetweets(screenName, count):
     print("Found: %s retweets" % len(dataTweets))
     insertTweetData(dataTweets)
 
+#If "tweet" is a retweet, returns the original day of the tweet, otherwise
+#returns normal tweet date
 def getOriginalTime(tweet):
     if(tweet.retweeted):
         originaltTweet = api.get_status(tweet.id_str)
@@ -70,6 +75,8 @@ def getOriginalTime(tweet):
     else:
         return [tweet.id_str, str(tweet.created_at)]
 
+#Inserts tweet ID and date into DB
+#Won't duplicate insertions if tweet ID is already on DB
 def insertTweetData(dataTweets):
     conn = sqlite3.connect('trumpgret.db')
     c = conn.cursor()
@@ -80,42 +87,35 @@ def insertTweetData(dataTweets):
     conn.commit()
     conn.close()
 
+#Returns all tuples from table tweets
 def getDBTweets():
     conn = sqlite3.connect('trumpgret.db')
     c = conn.cursor()
 
     c.execute('SELECT * FROM tweets')
     results = c.fetchall()
-    print (len(results))
-	
+
     conn.close()
     return results
-    
-def getMostRecentTweetDB():
-    conn = sqlite3.connect('trumpgret.db')
-    c = conn.cursor()
 
-    c.execute('SELECT * FROM tweets ORDER BY id DESC LIMIT 1')
-    result = c.fetchone()
-    print (result[0])
-	
-    conn.close()
-
+#Initializes the databse if it doesn't exist
 def initDB():
     if not ([s for s in os.listdir(os.getcwd()) if ".db" in s]):
         con = sqlite3.connect('trumpgret.db')
         cursor = con.cursor()
         
-        # Create table
         cursor.execute('''CREATE TABLE IF NOT EXISTS tweets
                      (id integer primary key, date text)''')
         con.close()
         
+#Returns total tweet count from Trump_Regrets directly from the website
 def readTotalTweetValue():
     page = requests.get("https://twitter.com/Trump_Regrets")
     soup = BeautifulSoup(page.content, 'html.parser')
     return soup.find_all(class_='ProfileNav-value')[0].text.replace(',', '')
 
+#Updates DB with latest tweets if total Tweet count is different from the one
+#saved in twitter_data.json
 def updateTweetDB():
     jsonFile = open("twitter_data.json", "r")
     data = json.load(jsonFile)
@@ -134,9 +134,6 @@ def updateTweetDB():
     else:
         return "No new tweets"
 
-#getAllRetweets("placeholderYael")
 #getAllRetweets("Trump_Regrets")
-
 initDB()
-#readTotalTweetValue()
 #updateTweetDB()
